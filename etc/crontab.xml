@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Cron:etc/crontab.xsd">
+    <!--<group id="default">
+        <job name="tech_system_cron_techintegration" instance="Tech\System\Cron\TechIntegration" method="execute">
+            <schedule>* * * * *</schedule>
+        </job>
+     </group>-->
+
+     <!--<group id="default">
+        <job name="tech_system_cron_customer" instance="Tech\System\Cron\CustomerCreate" method="execute">
+            <schedule>* * * * *</schedule>
+        </job>
+     </group>-->
+
+	<!--<group id="default">
+        <job name="tech_system_cron_order" instance="Tech\System\Cron\OrderIntegration" method="execute">
+            <schedule>* * * * *</schedule>
+        </job>
+     </group>-->
+
+        <!--<group id="default">
+        <job name="tech_system_cron_order" instance="Tech\System\Cron\UpdateQuantity" method="execute">
+            <schedule>* * * * *</schedule>
+        </job>
+     </group>-->
+
+
+	
+	<!--<group id="default">
+        <job name="tech_system_cron_techintegration" instance="Tech\System\Cron\UpdateProduct" method="execute">
+            <schedule>* * * * *</schedule>
+        </job>
+     </group>-->
+     
+</config>
+
+     
+
+
+    
