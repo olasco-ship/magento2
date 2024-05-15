@@ -1,0 +1,198 @@
+<?php
+/**
+ * Copyright Â© Magento, Inc. All rights reserved.
+ * See COPYING.txt for license details.
+ */
+namespace System\Tech\Cron;
+
+use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\Framework\HTTP\Client\Curl;
+use Magento\Catalog\Api\Data\ProductInterfaceFactory;
+use Magento\Catalog\Model\ProductRepository;
+
+class CheckProductBySKU {
+
+    /**
+     * @var \Magento\Framework\HTTP\Client\Curl
+     */
+    protected $curlClient;
+
+    /**
+     * @var string
+     */
+    protected $urlPrefix = 'https://';
+
+
+    /**
+     * @var string
+     */
+    protected $apiUrl = 'td-prod.operations.dynamics.com/api/services/SalesPriceSeviceGroup/SalesPrice/getItemOnhandList';
+
+    /**
+     * @var string
+     */
+      protected $apiUri ='login.microsoftonline.com/473a0bc4-3b24-41dd-8637-31d1d34ae468/oauth2/token';
+
+    /**
+     * @var \Magento\Catalog\Api\ProductRepositoryInterface
+     */
+
+    protected $productInterfaceFactory;
+
+     /**
+     * @var \Magento\Catalog\Model\ProductRepository     
+     */
+
+
+
+    /**
+     * @var \Magento\Store\Model\App\Emulation
+     */
+    protected $appEmulation;
+    /**
+     * @var \Magento\Store\Model\StoreManagerInterface
+     */
+    protected $storeManager;
+    /**
+     * @var \Magento\Catalog\Model\ProductRepository
+     */
+    protected $productRepository;
+    
+    /**
+     * @param \Magento\Store\Model\App\Emulation              $appEmulation
+     * @param \Magento\Store\Model\StoreManagerInterface      $storeManager
+     * @param \Magento\Catalog\Model\ProductRepository $productRepository
+     * @param \Magento\Framework\HTTP\Client\Curl              $curl
+     * @param \Magento\Catalog\Api\Data\ProductInterfaceFactory $productInterfaceFactory
+     *@param \Magento\Catalog\Model\ProductFactory $productFactory
+     */
+    public function __construct(
+       \Magento\Store\Model\App\Emulation $appEmulation,
+       \Magento\Store\Model\StoreManagerInterface $storeManager,
+       \Magento\Catalog\Model\ProductRepository $productRepository,
+       \Magento\Framework\HTTP\Client\Curl $curl,
+       \Magento\Catalog\Api\Data\ProductInterfaceFactory $productInterfaceFactory,
+      \Magento\Catalog\Model\ProductFactory $productFactory
+           ) {
+       $this->appEmulation = $appEmulation;
+       $this->storeManager = $storeManager;
+    $this->productRepository = $productRepository;
+       $this->curlClient = $curl;
+       $this->productInterfaceFactory = $productInterfaceFactory;
+       $this->productFactory = $productFactory;
+        }
+
+        /**
+     * @return string
+     */
+    public function getApiUrl()
+    {
+        return $this->urlPrefix . $this->apiUrl;
+    }
+
+    public function getApiUrls() {
+    
+    return $this->urlPrefix . $this->apiUri;
+        }
+
+    /**
+     * Gets productInfo json
+     *
+     * @return array
+     */
+
+     public function execute()
+    {
+    $userData = "#";
+        $apiUri = $this->getApiUrls();
+        $this->getCurlClient()->addHeader("Content-Type", "application/x-www-form-urlencoded");
+        $this->getCurlClient()->post($apiUri, $userData);
+        $trent = json_decode($this->getCurlClient()->getBody());
+        $tren =  $trent->access_token;
+
+         //var_dump($tren);
+         
+        
+         $body = array("_contract" =>
+         array("Warehouse" => "MW"
+            
+         )  
+       );
+
+         $postData = json_encode($body);
+
+        $apiUrl = $this->getApiUrl();
+
+            $this->getCurlClient()->addHeader("Content-Type", "application/json");
+            $this->getCurlClient()->addHeader("Authorization", "Bearer $tren");
+        $this->getCurlClient()->setOption(CURLOPT_SSL_VERIFYHOST,false);
+        $this->getCurlClient()->setOption(CURLOPT_SSL_VERIFYPEER,false);
+        $this->getCurlClient()->post($apiUrl, $postData);
+            $response = json_decode($this->getCurlClient()->getBody());
+    
+
+   // $ola = json_decode($response);
+    //var_dump($ola);
+          //die();
+            
+    //var_dump($response->ItemList['ItemId']);
+    //die();
+
+        
+            //$te = json_encode(($response->ItemList));
+           //$te = json_decode($response->ItemList);
+                        
+
+             
+            //$adex = (json_decode($te));
+            //var_dump($adex->ItemId);
+    //die();
+            $adex = json_decode(json_encode($response));
+            
+    //var_dump($adex);
+    //die();
+
+     foreach ($adex as $item) {
+
+        
+        //var_dump($item->itemId);
+       //die();
+	try {
+		$sku = $item->itemId;
+		$product = $this->productFactory->create();
+		$productId = $product->getIdBySKU($sku);
+		if ($productId) {
+		//var_dump($productId);
+		//die();
+		$product->load($productId);
+		
+		} elseif (!$productId) {
+			//echo "This is not valid product.. continue with the language";
+			continue;
+			}
+		$tret = round($item->Salesprice);
+		$product->setPrice($tret);
+		$product->setStockData(['qty' => $item->OnHandQuantity, 'is_in_stock' => $item->OnHandQuantity > 0]);
+		
+		$product->save();
+		//var_dump($sku.' updated. ');
+		
+		} catch (Exception $e) {
+                  echo $e->getException();
+		
+		
+    	       }
+
+	}
+
+	
+	}
+      
+	     /**
+             * @return Curl
+             */
+            public function getCurlClient()
+            {
+                return $this->curlClient;
+            }     
+}
